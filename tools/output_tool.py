@@ -16,6 +16,12 @@ def basic_output_function(data, config, *args, **params):
 
     return json.dumps(result, sort_keys=True)
 
+def binary_output(data, config, *args, **params):
+    if data["total"] == 0:
+        return 0
+    else:
+        return data["right"] / data["total"]
+
 def output_function1(data, config, *args, **params):
     if data['pre_num'] != 0 and data['actual_num'] != 0:
         pre = data['right'] / data['pre_num']
