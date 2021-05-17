@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import json
 
-from transformers import AutoModel,AutoModelForQuestionAnswering
+from transformers import AutoConfig,AutoModelForQuestionAnswering,LongformerForQuestionAnswering
 
 from tools.accuracy_tool import multi_label_accuracy, single_label_top1_accuracy
 
@@ -11,8 +11,13 @@ from tools.accuracy_tool import multi_label_accuracy, single_label_top1_accuracy
 class ArgExt(nn.Module):
     def __init__(self, config, gpu_list, *args, **params):
         super(ArgExt, self).__init__()
-
-        self.encoder = AutoModelForQuestionAnswering.from_pretrained('hfl/chinese-macbert-base')
+        self.plm_config = AutoConfig.from_pretrained(config.get("train", "bert_model"))
+        self.lfm = 'Longformer' in self.plm_config.architectures[0]
+        if self.lfm:
+            self.encoder = LongformerForQuestionAnswering.from_pretrained(config.get("train", "bert_model"))
+        else:
+            self.encoder = AutoModelForQuestionAnswering.from_pretrained(config.get("train", "bert_model"))
+        
         self.hidden_size = 768
 
         self.accuracy_function = single_label_top1_accuracy
@@ -21,7 +26,10 @@ class ArgExt(nn.Module):
         # inputx = data['inputx'] # batch, seq_len
         # mask = data['mask']
         # batch, seq_len = inputx.shape[0], inputx.shape[1]
-        out = self.encoder(data["inputx"], attention_mask=data["mask"], token_type_ids=data["type_id"], start_positions=data["start_logits"], end_positions=data["end_logits"])
+        if self.lfm:
+            out = self.encoder(data["inputx"], attention_mask=data["mask"], global_attention_mask=data["global_att"], token_type_ids=data["type_id"], start_positions=data["start_logits"], end_positions=data["end_logits"])
+        else:
+            out = self.encoder(data["inputx"], attention_mask=data["mask"], token_type_ids=data["type_id"], start_positions=data["start_logits"], end_positions=data["end_logits"])
         loss, start_logits, end_logits = out["loss"], out["start_logits"], out["end_logits"]
         if mode == "train":
             start = torch.max(start_logits, dim = 1)[1]
@@ -34,8 +42,8 @@ class ArgExt(nn.Module):
 def get_prediction(start_logits, end_logits, type_ids):
     start_logits -= (1 - type_ids) * 100 # batch, seq_len
     end_logits -= (1 - type_ids) * 100
-    start_indexes = start_logits.argsort(dim = 1)[:, :20].tolist()
-    end_indexes = end_logits.argsort(dim = 1)[:, :20].tolist()
+    start_indexes = (-start_logits).argsort(dim = 1)[:, :30].tolist()
+    end_indexes = (-end_logits).argsort(dim = 1)[:, :30].tolist()
     batch = start_logits.shape[0]
     ret_start, ret_end = [], []
     for ins_ind in range(batch):
@@ -50,8 +58,10 @@ def get_prediction(start_logits, end_logits, type_ids):
                 if start_logits[ins_ind, start] + end_logits[ins_ind, end] > max_value:
                     max_value = float(start_logits[ins_ind, start] + end_logits[ins_ind, end])
                     max_start, max_end = start, end
+
         ret_start.append(max_start)
         ret_end.append(max_end)
+
     return torch.tensor(ret_start, dtype=torch.long), torch.tensor(ret_end, dtype=torch.long)
 
 def accuracy(pre_start, pre_end, label_start, label_end, acc_result):

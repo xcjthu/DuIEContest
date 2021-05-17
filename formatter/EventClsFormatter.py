@@ -62,8 +62,8 @@ class EventClsFormatter(BasicFormatter):
         labels = np.zeros((len(data), len(self.event2id)))
 
         for did, doc in enumerate(data):
-            tokens = []
-            cands = self.find_cand_word(doc)
+            # tokens = []
+            # cands = self.find_cand_word(doc)
 
 
             tokens = self.tokenizer.encode(doc["text"], max_length=self.max_len, add_special_tokens=True, truncation=True)
@@ -73,9 +73,12 @@ class EventClsFormatter(BasicFormatter):
             inputx.append(tokens)
             for l in doc['event_list']:
                 labels[did,self.event2id[l["event_type"]]] = 1
+        glmask = np.zeros((len(data), self.max_len))
+        glmask[:,0] = 1
         ret = {
             "inputx": torch.tensor(inputx, dtype=torch.long),
             "mask": torch.tensor(mask, dtype=torch.long),
             "labels": torch.tensor(labels, dtype=torch.long),
+            "glmask": torch.tensor(glmask, dtype=torch.long),
         }
         return ret

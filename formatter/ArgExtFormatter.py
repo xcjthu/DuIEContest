@@ -14,7 +14,7 @@ class ArgExtFormatter(BasicFormatter):
         self.mode = mode
         self.max_len = config.getint("train", "max_len")
         self.qa_num = config.getint("train", "qa_num")
-        self.tokenizer = AutoTokenizer.from_pretrained("hfl/chinese-macbert-base")
+        self.tokenizer = AutoTokenizer.from_pretrained(config.get("train", "token_model"))
         schema = [json.loads(line) for line in open(config.get("data", "schema_path"), "r")]
         self.event2qas = {eve["event_type"]: {role["role"]: "%s的%s为？" % (eve["event_type"].split("-")[-1], role["role"]) for role in eve["role_list"]} for eve in schema}
 
@@ -40,8 +40,10 @@ class ArgExtFormatter(BasicFormatter):
         type_id = []
         start_positions = []
         end_positions = []
+        global_att = []
         for qa in qas:
             queids = self.tokenizer.encode(qa["que"], add_special_tokens=False)
+            global_att.append([1] * (len(queids) + 1) + [0] * (self.max_len - len(queids) - 1))
             tokens = [self.tokenizer.cls_token_id] + queids + [self.tokenizer.sep_token_id] + self.tokenizer.encode(qa["doc"][:qa["ans"][0]], add_special_tokens=False)
             start = len(tokens) - 1
             ansids = self.tokenizer.encode(qa["ans"][1], add_special_tokens=False)
@@ -69,5 +71,6 @@ class ArgExtFormatter(BasicFormatter):
             "start_logits": torch.tensor(start_positions, dtype=torch.long),
             "end_logits": torch.tensor(end_positions, dtype=torch.long),
             "type_id": torch.tensor(type_id, dtype=torch.long),
+            "global_att": torch.tensor(global_att, dtype=torch.long),
         }
         return ret
