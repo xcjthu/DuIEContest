@@ -2,12 +2,13 @@ import logging
 
 from .Basic import BasicFormatter
 from .BertFormatter import BertFormatter
-
+from .EventClsFormatter import EventClsFormatter
 logger = logging.getLogger(__name__)
 
 formatter_list = {
     "Basic": BasicFormatter,
-    "BERT": BertFormatter
+    "BERT": BertFormatter,
+    "EventCls": EventClsFormatter,
 }
 
 

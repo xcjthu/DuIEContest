@@ -139,4 +139,4 @@ def train(parameters, config, gpu_list, do_test=False, local_rank=-1):
                 valid(model, parameters["valid_dataset"], current_epoch, writer, config, gpu_list, output_function)
                 if do_test:
                     valid(model, test_dataset, current_epoch, writer, config, gpu_list, output_function, mode="test")
-        torch.distributed.barrier()
+        # torch.distributed.barrier()
