@@ -1,0 +1,14 @@
+*~
+.DS_Store
+*swp
+*swo
+.idea
+__pycache__
+*un~
+data/
+
+config/default_local.config
+
+temp
+notebook
+result
