@@ -12,7 +12,7 @@ class JsonFromFilesDataset(Dataset):
         # data = data[:len(data)//4]
         # data = data[len(data)//4 : 2 * len(data)//4]
         # data = data[2 * len(data)//4 : 3 * len(data)//4]
-        data = data[3 * len(data)//4 :]
+        # data = data[3 * len(data)//4 :]
         self.data = []
         if mode != "test":
             for docid in range(len(data)):

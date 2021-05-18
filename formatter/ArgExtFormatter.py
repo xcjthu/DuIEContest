@@ -45,10 +45,10 @@ class ArgExtFormatter(BasicFormatter):
             queids = self.tokenizer.encode(qa["que"], add_special_tokens=False)
             global_att.append([1] * (len(queids) + 1) + [0] * (self.max_len - len(queids) - 1))
             tokens = [self.tokenizer.cls_token_id] + queids + [self.tokenizer.sep_token_id] + self.tokenizer.encode(qa["doc"][:qa["ans"][0]], add_special_tokens=False)
-            start = len(tokens) - 1
+            start = len(tokens)
             ansids = self.tokenizer.encode(qa["ans"][1], add_special_tokens=False)
-            end = start + len(ansids) - 1
             tokens += ansids
+            end = len(tokens) - 1
             tokens += self.tokenizer.encode(qa["doc"][qa["ans"][0] + len(qa["ans"][1]): ], add_special_tokens=False) + [self.tokenizer.sep_token_id]
             if qa["ans"][1] == "":
                 start, end = 0, 0
