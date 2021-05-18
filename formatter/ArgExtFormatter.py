@@ -21,20 +21,23 @@ class ArgExtFormatter(BasicFormatter):
     def process(self, data, config, mode, *args, **params):
 
         allqas = []
-        for did, doc in enumerate(data):
-            for eve in doc["event_list"]:
-                exist_arg = set()
-                for arg in eve["arguments"]:
-                    allqas.append({"doc": doc["text"], "role": arg, "id": doc["id"], "que": self.event2qas[eve["event_type"]][arg["role"]], "ans": (arg["argument_start_index"], arg["argument"])})
-                    exist_arg.add(arg["role"])
-                for arg in self.event2qas[eve["event_type"]]:
-                    if arg not in exist_arg:
-                        allqas.append({"doc": doc["text"], "role": arg, "id": doc["id"], "que": self.event2qas[eve["event_type"]][arg], "ans": (0, "")})
+        if mode != "test":
+            for did, doc in enumerate(data):
+                for eve in doc["event_list"]:
+                    exist_arg = set()
+                    for arg in eve["arguments"]:
+                        allqas.append({"doc": doc["text"], "role": arg, "id": doc["id"], "que": self.event2qas[eve["event_type"]][arg["role"]], "ans": (arg["argument_start_index"], arg["argument"])})
+                        exist_arg.add(arg["role"])
+                    for arg in self.event2qas[eve["event_type"]]:
+                        if arg not in exist_arg:
+                            allqas.append({"doc": doc["text"], "role": arg, "id": doc["id"], "que": self.event2qas[eve["event_type"]][arg], "ans": (0, "")})
 
-        if mode == "train":
-            qas = random.sample(allqas, min(self.qa_num, len(allqas)))
+            if mode == "train":
+                qas = random.sample(allqas, min(self.qa_num, len(allqas)))
+            else:
+                qas = allqas[:4]
         else:
-            qas = allqas[:4]
+            qas = data
         inputx = []
         mask = []
         type_id = []

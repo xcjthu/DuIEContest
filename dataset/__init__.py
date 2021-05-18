@@ -1,5 +1,6 @@
-from dataset.JsonFromFiles import JsonFromFilesDataset
+from dataset.JsonFromFiles import JsonFromFilesDataset,ArgExtTestDataset
 
 dataset_list = {
-    "JsonFromFiles": JsonFromFilesDataset
+    "JsonFromFiles": JsonFromFilesDataset,
+    "ArgExtTest": ArgExtTestDataset,
 }

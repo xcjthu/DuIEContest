@@ -33,6 +33,8 @@ def fix_span(tokens, text):
     # print(''.join(tokenizer.decode(tokens)).replace(" ", ""))
     # print("=" * 20)
     # time.sleep(2)
+    if span is None:
+        return ""
     return span
 
 doc_labels = {}
@@ -42,8 +44,6 @@ for pred in tqdm(data):
     if pred["id"] not in doc_labels:
         doc_labels[pred["id"]] = []
     span = fix_span(pred["pred"], all_data[id2index[pred["id"]]]["text"])
-    if span is None:
-        continue
     doc_labels[pred["id"]].append({"role": pred["role"], "pred": span})
 
 schema = [json.loads(line) for line in open("/data/disk1/private/xcj/DuIE/data/Doc-EE/duee_fin_schema/duee_fin_event_schema.json", "r")]
@@ -55,6 +55,8 @@ for docid in tqdm(doc_labels):
         eve_type = role2type[role["role"]]
         if eve_type not in event_list:
             event_list[eve_type] = {"event_type": eve_type, "arguments": []}
+        if role["pred"] == "":
+            continue
         event_list[eve_type]["arguments"].append({"role": role["role"], "argument": role["pred"]})
     event_list = list(event_list.values())
     results.append({"id": docid, "event_list": event_list})
