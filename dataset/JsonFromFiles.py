@@ -54,10 +54,10 @@ class ArgExtTestDataset(Dataset):
         self.mode = mode
         self.data_path = config.get("data", "%s_data" % mode)
         data = [json.loads(line) for line in open(self.data_path, "r")]
-        # data = data[:len(data)//4]
+        data = data[:len(data)//4]
         # data = data[len(data)//4 : 2 * len(data)//4]
         # data = data[2 * len(data)//4 : 3 * len(data)//4]
-        data = data[3 * len(data)//4 :]
+        # data = data[3 * len(data)//4 :]
         self.data = []
 
         pred_type = json.load(open(config.get("data", "pred_type"), "r"))

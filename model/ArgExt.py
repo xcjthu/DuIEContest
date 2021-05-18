@@ -80,8 +80,16 @@ def get_prediction(start_logits, end_logits, type_ids, inputids, mode = "valid")
 
 def accuracy(pre_start, pre_end, label_start, label_end, acc_result):
     if acc_result is None:
-        acc_result = {'right': 0, 'total': 0}
-    acc_result["right"] += int(((pre_start.cpu() == label_start.cpu()) * (pre_end.cpu() == label_end.cpu())).sum())
-    acc_result["total"] += int(label_start.shape[0])
-
+        acc_result = {'pre_num': 0, 'actual_num': 0, "right": 0}
+    for ps, pe, ls, le in zip(pre_start.tolist(), pre_end.tolist(), label_start, label_end):
+        if ps != 0 and pe != 0:
+            acc_result["pre_num"] += 1
+        if ls != 0 and le != 0:
+            acc_result["actual_num"] += 1
+            if ps == ls and pe == le:
+                acc_result["right"] += 1
+    # acc_result["right"] += int(((pre_start.cpu() == label_start.cpu()) * (pre_end.cpu() == label_end.cpu())).sum())
+    # acc_result["total"] += int(label_start.shape[0])
     return acc_result
+
+
