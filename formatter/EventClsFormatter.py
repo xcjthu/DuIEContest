@@ -16,7 +16,7 @@ class EventClsFormatter(BasicFormatter):
         schema = [json.loads(line) for line in open(config.get("data", "schema_path"), "r")]
         self.event2id = {eve["event_type"]: eid for eid, eve in enumerate(schema)}
         # self.event2id["NA"] = len(self.event2id)
-        self.read_cand_word(config)
+        # self.read_cand_word(config)
 
     def read_cand_word(self, config):
         self.eve2word = {}
@@ -47,14 +47,13 @@ class EventClsFormatter(BasicFormatter):
             if len(ans) == 0 or r[0] >= ans[-1][1]:
                 ans.append(r)
         return ans
-    
+
     def encode_text(self, text, cand_words):
         last = 0
         tokens = [self.tokenizer.cls_token_id]
         for cand in cand_words:
             tokens += self.tokenizer.encode(text["text"][last:cand[0]], add_special_tokens=False)
             tokens += self.tokenizer.convert_token_to_id(["[unused1]"]) # 没有写完，但感觉已经不需要了
-
 
     def process(self, data, config, mode, *args, **params):
         inputx = []
@@ -64,15 +63,14 @@ class EventClsFormatter(BasicFormatter):
         for did, doc in enumerate(data):
             # tokens = []
             # cands = self.find_cand_word(doc)
-
-
             tokens = self.tokenizer.encode(doc["text"], max_length=self.max_len, add_special_tokens=True, truncation=True)
             mask.append([1] * len(tokens) + [0] * (self.max_len - len(tokens)))
             tokens += [self.tokenizer.pad_token_id] * (self.max_len - len(tokens))
 
             inputx.append(tokens)
-            for l in doc['event_list']:
-                labels[did,self.event2id[l["event_type"]]] = 1
+            if mode != "test":
+                for l in doc['event_list']:
+                    labels[did,self.event2id[l["event_type"]]] = 1
         glmask = np.zeros((len(data), self.max_len))
         glmask[:,0] = 1
         ret = {
@@ -80,5 +78,6 @@ class EventClsFormatter(BasicFormatter):
             "mask": torch.tensor(mask, dtype=torch.long),
             "labels": torch.tensor(labels, dtype=torch.long),
             "glmask": torch.tensor(glmask, dtype=torch.long),
+            "ids": [d["id"] for d in data],
         }
         return ret

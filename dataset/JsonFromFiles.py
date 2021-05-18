@@ -9,15 +9,38 @@ class JsonFromFilesDataset(Dataset):
         self.mode = mode
         self.data_path = config.get("data", "%s_data" % mode)
         data = [json.loads(line) for line in open(self.data_path, "r")]
+        # data = data[:len(data)//4]
+        # data = data[len(data)//4 : 2 * len(data)//4]
+        # data = data[2 * len(data)//4 : 3 * len(data)//4]
+        data = data[3 * len(data)//4 :]
         self.data = []
-        for docid in range(len(data)):
-            if "event_list" not in data[docid]:
-                continue
-            for eveid in range(len(data[docid]["event_list"])):
-                for argid in range(len(data[docid]["event_list"][eveid]["arguments"])):
-                    if "argument_start_index" not in data[docid]["event_list"][eveid]["arguments"][argid]:
-                        data[docid]["event_list"][eveid]["arguments"][argid]["argument_start_index"] = data[docid]["text"].find(data[docid]["event_list"][eveid]["arguments"][argid]["argument"])
-            self.data.append(data[docid])
+        if mode != "test":
+            for docid in range(len(data)):
+                if "event_list" not in data[docid]:
+                    continue
+                for eveid in range(len(data[docid]["event_list"])):
+                    for argid in range(len(data[docid]["event_list"][eveid]["arguments"])):
+                        if "argument_start_index" not in data[docid]["event_list"][eveid]["arguments"][argid]:
+                            data[docid]["event_list"][eveid]["arguments"][argid]["argument_start_index"] = data[docid]["text"].find(data[docid]["event_list"][eveid]["arguments"][argid]["argument"])
+                self.data.append(data[docid])
+        elif config.get("model", "model_name") == "EventCls":
+            self.data = data
+        else:    
+            pred_type = json.load(open(config.get("data", "pred_type"), "r"))
+            eid2type = {pred["id"]: pred["res"] for pred in pred_type}
+            schema = [json.loads(line) for line in open(config.get("data", "schema_path"), "r")]
+            id2event = {eid: eve["event_type"] for eid, eve in enumerate(schema)}
+            for docid in range(len(data)):
+                if data[docid]["id"] not in eid2type:
+                    print(data[docid]["id"])
+                    continue
+                if len(eid2type[data[docid]["id"]]) == 0:
+                    continue
+                for typ in eid2type[data[docid]["id"]]:
+                    tmp = data[docid].copy()
+                    tmp["event_list"] = [{"event_type": id2event[typ], "arguments": []} ]
+                    self.data.append(tmp)
+        print("data num", len(self.data))
     def __getitem__(self, item):
         return self.data[item]
 

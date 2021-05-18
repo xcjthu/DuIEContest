@@ -25,16 +25,16 @@ class ArgExtFormatter(BasicFormatter):
             for eve in doc["event_list"]:
                 exist_arg = set()
                 for arg in eve["arguments"]:
-                    allqas.append({"doc": doc["text"], "que": self.event2qas[eve["event_type"]][arg["role"]], "ans": (arg["argument_start_index"], arg["argument"])})
+                    allqas.append({"doc": doc["text"], "role": arg, "id": doc["id"], "que": self.event2qas[eve["event_type"]][arg["role"]], "ans": (arg["argument_start_index"], arg["argument"])})
                     exist_arg.add(arg["role"])
                 for arg in self.event2qas[eve["event_type"]]:
                     if arg not in exist_arg:
-                        allqas.append({"doc": doc["text"], "que": self.event2qas[eve["event_type"]][arg], "ans": (0, "")})
+                        allqas.append({"doc": doc["text"], "role": arg, "id": doc["id"], "que": self.event2qas[eve["event_type"]][arg], "ans": (0, "")})
 
         if mode == "train":
             qas = random.sample(allqas, min(self.qa_num, len(allqas)))
         else:
-            qas = allqas
+            qas = allqas[:4]
         inputx = []
         mask = []
         type_id = []
@@ -63,7 +63,6 @@ class ArgExtFormatter(BasicFormatter):
             inputx.append(tokens)
             start_positions.append(start)
             end_positions.append(end)
-            
 
         ret = {
             "inputx": torch.tensor(inputx, dtype=torch.long),
@@ -72,5 +71,7 @@ class ArgExtFormatter(BasicFormatter):
             "end_logits": torch.tensor(end_positions, dtype=torch.long),
             "type_id": torch.tensor(type_id, dtype=torch.long),
             "global_att": torch.tensor(global_att, dtype=torch.long),
+            "ids": [d["id"] for d in qas],
+            "roles": [d["role"] for d in qas]
         }
         return ret

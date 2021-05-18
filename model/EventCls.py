@@ -19,7 +19,8 @@ class EventCls(nn.Module):
         else:
             self.encoder = AutoModel.from_pretrained(config.get("train", "bert_model"))
         self.hidden_size = 768
-        self.class_num = 65
+        schema = [json.loads(line) for line in open(config.get("data", "schema_path"), "r")]
+        self.class_num = len(schema)
         self.fc = nn.Linear(self.hidden_size, self.class_num)
 
         # self.criterion = nn.CrossEntropyLoss()
@@ -35,10 +36,25 @@ class EventCls(nn.Module):
         else:
             out = self.encoder(data["inputx"], attention_mask=data["mask"])
         score = self.fc(out["pooler_output"])# .view(batch, self.class_num)
-        loss = self.criterion(score, data["labels"].float())
 
-        acc_result = accuracy(score, data["labels"], config, acc_result)
-        return {"loss": loss, "acc_result": acc_result}
+        if mode != "test":
+            loss = self.criterion(score, data["labels"].float())
+            acc_result = accuracy(score, data["labels"], config, acc_result)
+            return {"loss": loss, "acc_result": acc_result}
+        else:
+            return {"loss": 0, "acc_result": {'right': 0, 'pre_num': 0, 'actual_num': 0}, "output": gen_label(score, data["ids"])}
+
+def gen_label(score, ids):
+    ret = []
+    pred = score > 0
+    batch = len(ids)
+    for i in range(batch):
+        la = []
+        for j in range(pred[i].shape[0]):
+            if pred[i,j]:
+                la.append(j)
+        ret.append({"id": ids[i], "res": la})
+    return ret
 
 def accuracy(score, label, config, acc_result):
     if acc_result is None:
