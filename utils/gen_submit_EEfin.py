@@ -5,10 +5,10 @@ from tqdm import tqdm
 
 path = "/data/disk1/private/xcj/DuIE/result/predict/"
 tokenizer = AutoTokenizer.from_pretrained("hfl/chinese-roberta-wwm-ext")
-all_data = [json.loads(line) for line in open("/data/disk1/private/xcj/DuIE/data/Doc-EE/duee_fin_test1.json/duee_fin_test1.json", "r")]
+all_data = [json.loads(line) for line in open("/data/disk1/private/xcj/DuIE/data/Doc-EE/duee_fin_test1.json/duee_fin_test2.json", "r")]
 id2index = {doc["id"]: idx for idx, doc in enumerate(all_data)}
 data = []
-for f in ["ArgExt-fin-1.json", "ArgExt-fin-2.json", "ArgExt-fin-3.json", "ArgExt-fin-4.json"]:
+for f in ["ArgExt-fin-test2-1.json", "ArgExt-fin-test2-2.json", "ArgExt-fin-test2-3.json", "ArgExt-fin-test2-4-1.json", "ArgExt-fin-test2-4-2.json"]:
     data += json.load(open(os.path.join(path, f), "r"))
 
 ids = set([d["id"] for d in data])
@@ -26,7 +26,7 @@ def fix_span(tokens, text):
                 match = False
                 break
         if match:
-            real_tokens = all_tokens[tid + 1: tid + 2 + len(tokens)]
+            real_tokens = all_tokens[tid: tid + 1 + len(tokens)]
             span = ''.join(tokenizer.decode(real_tokens)).replace(" ", "")
     
     # print(span)
@@ -61,7 +61,7 @@ for docid in tqdm(doc_labels):
     event_list = list(event_list.values())
     results.append({"id": docid, "event_list": event_list})
 
-fout = open("submit_eefin.json", "w")
+fout = open("submit_eefin-test2.json", "w")
 for res in results:
     print(json.dumps(res, ensure_ascii = False), file = fout)
 fout.close()

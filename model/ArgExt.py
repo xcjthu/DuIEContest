@@ -12,12 +12,15 @@ class ArgExt(nn.Module):
     def __init__(self, config, gpu_list, *args, **params):
         super(ArgExt, self).__init__()
         self.plm_config = AutoConfig.from_pretrained(config.get("train", "bert_model"))
-        self.lfm = 'Longformer' in self.plm_config.architectures[0]
+        try:
+            self.lfm = 'Longformer' in self.plm_config.architectures[0]
+        except:
+            self.lfm = False
         if self.lfm:
             self.encoder = LongformerForQuestionAnswering.from_pretrained(config.get("train", "bert_model"))
         else:
             self.encoder = AutoModelForQuestionAnswering.from_pretrained(config.get("train", "bert_model"))
-        
+
         self.hidden_size = 768
 
         self.accuracy_function = single_label_top1_accuracy
